@@ -196,4 +196,4 @@ SEXE_tab <- wtd.table(EEC$SEXE, EEC$TPPRED, exclude = NA, weights = EEC$EXTRI)
 print(cprop(SEXE_tab))
 print(chisq.test(SEXE_tab))
 
-# (Le reste de tes analyses suit cette logique...)
+# (Le reste des analyses suit cette logique...)
