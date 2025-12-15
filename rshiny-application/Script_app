@@ -1,0 +1,107 @@
+library(shiny)
+library(dplyr)
+library(DT)
+library(bslib)
+library(thematic)
+library(plotly)
+library(ggplot2)
+library(shinylive)
+data("diamonds")
+
+#UI
+ui <- page_fluid(
+  theme = bs_theme(version = 5 , bootswatch = "litera"), 
+  titlePanel("Exploration Diamonds"),  #Titre de l'app
+  
+  sidebarLayout(                      #Partie avec le choix des couleurs/ prix et slide bar 
+    
+    sidebarPanel(
+      
+      radioButtons(inputId = "couleur_graph_rose",
+                   label = "Colorier en rose ?",#Titre
+                   choices = c("Oui", "Non"), #boutons avec les deux choix 
+                   selected = "non"),  #non de base
+      selectInput(inputId = "choix_couleurs_filtre",
+                  label = "Choisir une couleur à filtrer :", #Titre 
+                  choices = levels(diamonds$color), #Onglet avec les couleurs des diamands comme choix 
+                  selected = "D") ,  #D de base 
+      sliderInput(inputId = "choix_prix_filtre",
+                  label = "Prix maximum :", #Titre 
+                  min = 0,
+                  max = 20000,
+                  value = 5000),
+      
+
+      actionButton(inputId = "bouton_visu_graph",
+                   label = "Visualiser le graph")
+     
+    ), 
+    
+    mainPanel( 
+      plotlyOutput("distPlot"),
+      DTOutput("diamonds_tab")
+    ) 
+  ) 
+) 
+      
+#SERVEUR
+server <- function(input, output) {
+  
+  rv <- reactiveValues(df = diamonds, couleur_graph_rose = "Non")
+  
+  observeEvent(input$bouton_visu_graph, {  #ce qui se passe quand l'utilisateur presse sur le bouton "visualiser graph" 
+    rv$df <- diamonds |> 
+      filter(color == input$choix_couleurs_filtre) |>  #Filtre avec la valeur que l'utilisateur à choisi dans l'UI
+      filter(price <= input$choix_prix_filtre)         #Filtre avec la valeur que l'utilisateur à choisi dans l'UI
+    
+    rv$choix_couleur_graph <- input$couleur_graph_rose #Devinit la couleur que l'utilisateur à choisi dans l'UI
+    showNotification(paste(
+      "Prix:", input$choix_prix_filtre, "& Couleur:", input$choix_couleurs_filtre),
+      type = "message"    
+    )
+  })
+  
+  output$distPlot <- renderPlotly({
+    couleur_point <- ifelse(rv$choix_couleur_graph == "Oui", "pink", "black") 
+    graphique <- ggplot(rv$df, aes(x = carat, y = price)) +
+      geom_point(color = couleur_point) +
+      theme_minimal() +
+      labs(title = paste("Prix:", input$choix_prix_filtre, "& Couleur:", input$choix_couleurs_filtre))
+    ggplotly(graphique)
+  })
+  
+  output$diamonds_tab <- renderDT({
+    # Utilisation de datatable() pour passer les options
+    datatable(rv$df, 
+              options = list(
+                columnDefs = list(
+                  
+                  
+   list(visible = FALSE, targets = c("x", "y","z"))# visible = FALSE masque la colonne sans la supprimer des données
+                )
+              )  # targets cible les colonnes par leur nom (ou index)
+    )
+  })
+}
+
+# Lancer application 
+shinyApp(ui = ui, server = server)
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
